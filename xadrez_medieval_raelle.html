@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Partida Real: Raelle vs Lion</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+
+    body {
+      margin: 0;
+      font-family: 'MedievalSharp', cursive;
+      background-color: #ffffff;
+      background-size: cover;
+      background-attachment: fixed;
+      color: #fff8e7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      color: gold;
+      text-shadow: 2px 2px 5px #000;
+    }
+
+    .board-container {
+      position: relative;
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .board {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      border: 4px solid #8b4513;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 10px #000;
+    }
+
+    .square {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    .light {
+      background-color: #e0c097;
+    }
+
+    .dark {
+      background-color: #7b5e3b;
+    }
+
+    .white-piece {
+      color: #ffffff;
+      text-shadow: 0 0 3px #000;
+    }
+
+    .black-piece {
+  color: #8b0000;
+      text-shadow: 0 0 4px #000;
+    }
+
+    .narrative-box {
+  max-width: 800px;
+  background: rgba(255, 248, 231, 0.9);
+  color: #2d1e0f;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  box-shadow: 0 0 10px #222;
+  border: 2px solid #aa7b3e;
+}
+
+    .narrative-box .player {
+      color: gold;
+      font-weight: bold;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      background: #aa7b3e;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-family: 'MedievalSharp', cursive;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .btn:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+      .notation {
+  position: absolute;
+  color: #000000;
+  font-size: 0.8rem;
+  font-family: 'MedievalSharp', cursive;
+  pointer-events: none;
+}
+
+    .rank-label {
+      left: -18px;
+      top: 5px;
+    }
+
+    .file-label {
+      bottom: -18px;
+      text-align: center;
+      width: 100%;
+    }
+      .notation-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .notation-ranks {
+      position: absolute;
+      left: -20px;
+      top: 0;
+      display: grid;
+      grid-template-rows: repeat(8, 60px);
+      font-size: 0.8rem;
+      color: #000;
+      font-family: 'MedievalSharp', cursive;
+    }
+
+    .notation-files {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      margin-top: 5px;
+      font-size: 0.8rem;
+      color: #000;
+      font-family: 'MedievalSharp', cursive;
+    }
+  </style>
+</head>
+<body>
+  <h1>♛ Partida Real: Raelle vs Lion ♚</h1>
+  <div class="board-container">
+    <div class="notation-wrapper">
+      <div class="notation-ranks">
+        <div>8</div><div>7</div><div>6</div><div>5</div><div>4</div><div>3</div><div>2</div><div>1</div>
+      </div>
+      <div class="board" id="board"></div>
+      <div class="notation-files">
+        <div>a</div><div>b</div><div>c</div><div>d</div><div>e</div><div>f</div><div>g</div><div>h</div>
+      </div>
+    </div>
+    <div id="notation-overlay"></div>
+  </div>
+
+  <div class="narrative-box" id="narrative"></div>
+
+  <div class="controls">
+    <button class="btn" onclick="nextMove()" id="nextBtn">Jogar</button>
+    <button class="btn" onclick="resetGame()">Reiniciar</button>
+  </div>
+
+  <script>
+    const pieces = {
+      'K': '♔', 'Q': '🧙', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
+      'k': '♚', 'q': '🧝', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
+    };
+
+    const initialBoard = [
+      ['r','n','b','q','k','b','n','r'],
+      ['p','p','p','p','p','p','p','p'],
+      ['.','.','.','.','.','.','.','.'],
+      ['.','.','.','.','.','.','.','.'],
+      ['.','.','.','.','.','.','.','.'],
+      ['.','.','.','.','.','.','.','.'],
+      ['P','P','P','P','P','P','P','P'],
+      ['R','N','B','Q','K','B','N','R']
+    ];
+
+    const boardElement = document.getElementById('board');
+    const narrativeBox = document.getElementById('narrative');
+    let currentBoard = JSON.parse(JSON.stringify(initialBoard));
+    let currentMove = 0;
+
+    const moves = [
+  { from: 'd2', to: 'd4', text: "<span class='player'>Raelle:</span> (pensamento) Um d4 sólido. Vamos ver se ele percebe." },
+  { from: 'e7', to: 'e6', text: "<span class='player'>Lion:</span> (pensamento) Um d4. Tradicional. Controlarei o centro." },
+  { from: 'g1', to: 'f3', text: "<span class='player'>Raelle:</span> (pensamento) Sólido também, pai. Mas este peão é um trampolim, não uma parede." },
+  { from: 'f7', to: 'f5', text: "<span class='player'>Lion:</span> (pensamento) Um lance agressivo para uma abertura tão tradicional. Gosto do espírito." },
+  { from: 'b1', to: 'c3', text: "<span class='player'>Raelle:</span> (pensamento) Ele não gosta de surpresas. Desequilibra sua ideia de ordem." },
+  { from: 'g8', to: 'f6', text: "<span class='player'>Lion:</span> (pensamento) Ela está desenvolvendo suas peças, como se esperava." },
+  { from: 'c1', to: 'g5', text: "<span class='player'>Raelle:</span> (pensamento) O Bispo. Sempre direto, sempre um problema." },
+  { from: 'f8', to: 'e7', text: "<span class='player'>Lion:</span> (pensamento) Ela pinou meu Cavalo. Um movimento de livro." },
+  { from: 'g5', to: 'f6', text: "<span class='player'>Raelle:</span> (pensamento) É exatamente isso que eu quero que ele pense." },
+  { from: 'e7', to: 'f6', text: "<span class='player'>Lion:</span> (pensamento) Uma troca. Nada demais. O jogo se clareia." },
+  { from: 'e2', to: 'e4', text: "<span class='player'>Raelle:</span> (pensamento) Ele morde a isca. Agora o centro dele é meu." },
+  { from: 'f5', to: 'e4', text: "<span class='player'>Lion:</span> (pensamento) Mais um peão no centro. Que a batalha comece então." },
+  { from: 'c3', to: 'e4', text: "<span class='player'>Raelle:</span> (pensamento) Desenvolvendo o Cavalo para uma casa central forte." },
+  { from: 'b7', to: 'b6', text: "<span class='player'>Lion:</span> (pensamento) O Cavalo dela está forte no centro. Preciso me defender." },
+  { from: 'f3', to: 'e5', text: "<span class='player'>Raelle:</span> (pensamento) O Rei busca refúgio, como sempre. Mas não há refúgio seguro." },
+  { from: 'e8', to: 'g8', text: "<span class='player'>Lion:</span> (pensamento) O Cavalo dela em e5 é um espinho. O Roque é a prioridade." },
+  { from: 'f1', to: 'd3', text: "<span class='player'>Raelle:</span> (pensamento) Desenvolvendo seu Bispo para uma diagonal ativa." },
+  { from: 'c8', to: 'b7', text: "<span class='player'>Lion:</span> (pensamento) Meu Bispo se desenvolve. Posso pensar em contra-ataque." },
+  { from: 'd1', to: 'h5', text: "<span class='player'>Raelle:</span> (pensamento) O Vizir se aproxima. O cheiro da vitória é doce como o medo no olhar do meu pai." },
+  { from: 'd8', to: 'e7', text: "<span class='player'>Lion:</span> (pensamento) O Vizir. Em h5? O que ela está tramando? Preciso proteger meu flanco." },
+  { from: 'h5', to: 'h7', text: "<span class='player'>Raelle:</span> (pensamento) Um brilhante sacrifício de meu Vizir para atrair o Rei." },
+  { from: 'g8', to: 'h7', text: "<span class='player'>Lion:</span> (pensamento) Ela sacrificou o Vizir! Mas... é xeque. Tenho que capturar!" },
+  { from: 'e4', to: 'f6', text: "<span class='player'>Raelle:</span> (pensamento) Meus Cavalos dançam, pai. Eles te levam à luz." },
+  { from: 'h7', to: 'h6', text: "<span class='player'>Lion:</span> (pensamento) Outro xeque! Os Cavalos dela são como fantasmas!" },
+  { from: 'e5', to: 'g4', text: "<span class='player'>Raelle:</span> (pensamento) O balé da vitória. Cada passo, um para a sua rendição." },
+  { from: 'h6', to: 'g5', text: "<span class='player'>Lion:</span> (pensamento) Dois Cavalos! É um balé infernal! Meu Rei está nu!" },
+  { from: 'h2', to: 'h4', text: "<span class='player'>Raelle:</span> (pensamento) Um peão pode se tornar rei, pai. Nunca subestime o pequeno." },
+  { from: 'g5', to: 'f4', text: "<span class='player'>Lion:</span> (pensamento) Até um peão! Ela está me humilhando com um peão!" },
+  { from: 'g2', to: 'g3', text: "<span class='player'>Raelle:</span> (pensamento) O abraço final. Um xeque sem saída." },
+  { from: 'f4', to: 'f3', text: "<span class='player'>Lion:</span> (pensamento) Não pode ser… está acabado…" },
+  { from: 'd3', to: 'e2', text: "<span class='player'>Raelle:</span> (pensamento) O Bispo corta a saída. O reino se fecha." },
+  { from: 'f3', to: 'g2', text: "<span class='player'>Lion:</span> (pensamento) Meu Bispo! Ele a está ajudando!" },
+  { from: 'h1', to: 'h2', text: "<span class='player'>Raelle:</span> (pensamento) A Torre anuncia o fim. O Rei está nu, e sozinho." },
+  { from: 'g2', to: 'g1', text: "<span class='player'>Lion:</span> (pensamento) A torre... não há mais para onde ir." },
+  { from: 'e1', to: 'd2', text: "<span class='player'>Raelle:</span> (pensamento) O Rei se move. A revolução apenas começou." }
+];
+
+    function coordinateToIndex(coord) {
+      const col = coord.charCodeAt(0) - 97;
+      const row = 8 - parseInt(coord[1]);
+      return [row, col];
+    }
+
+    function movePiece(from, to) {
+      const [fromRow, fromCol] = coordinateToIndex(from);
+      const [toRow, toCol] = coordinateToIndex(to);
+      currentBoard[toRow][toCol] = currentBoard[fromRow][fromCol];
+      currentBoard[fromRow][fromCol] = '.';
+    }
+
+    function drawBoard(board) {
+      boardElement.innerHTML = '';
+      const existingNotations = document.querySelectorAll('.notation');
+      existingNotations.forEach(n => n.remove());
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const square = document.createElement('div');
+          square.classList.add('square');
+          square.classList.add((row + col) % 2 === 0 ? 'light' : 'dark');
+          const pieceCode = board[row][col];
+      if (pieceCode !== '.') {
+        const isWhite = pieceCode === pieceCode.toUpperCase();
+        const colorClass = isWhite ? 'white-piece' : 'black-piece';
+        const piece = pieces[pieceCode];
+            square.classList.add(colorClass);
+            square.textContent = piece;
+          }
+                    if (col === 0) {
+            const rank = document.createElement('div');
+            rank.classList.add('notation', 'rank-label');
+            rank.style.top = `${row * 60}px`;
+            rank.style.left = '-18px';
+            rank.textContent = 8 - row;
+            boardElement.appendChild(rank);
+          }
+          if (row === 7) {
+            const file = document.createElement('div');
+            file.classList.add('notation', 'file-label');
+            file.style.position = 'absolute';
+            file.style.left = `${col * 60}px`;
+            file.style.bottom = '-18px';
+            file.textContent = String.fromCharCode(97 + col);
+            boardElement.appendChild(file);
+          }
+          boardElement.appendChild(square);
+        }
+      }
+    }
+
+    function nextMove() {
+      if (currentMove < moves.length) {
+        const move = moves[currentMove];
+        movePiece(move.from, move.to);
+        drawBoard(currentBoard);
+        narrativeBox.innerHTML = move.text;
+        currentMove++;
+      } else {
+        document.getElementById('nextBtn').disabled = true;
+        narrativeBox.innerHTML = '<span class="player">Narração:</span> A partida chegou ao fim.';
+      }
+    }
+
+    function resetGame() {
+      currentMove = 0;
+      currentBoard = JSON.parse(JSON.stringify(initialBoard));
+      drawBoard(currentBoard);
+      narrativeBox.innerHTML = "<span class='player'>Cerimonialista:</span> Que a partida entre Sua Majestade, o Rei Lion de Aethel, e a Princesa Raelle, tenha início.";
+      document.getElementById('nextBtn').disabled = false;
+    }
+
+    drawBoard(currentBoard);
+    narrativeBox.innerHTML = "<span class='player'>Cerimonialista:</span> Que a partida entre Sua Majestade, o Rei Lion de Aethel, e a Princesa Raelle, tenha início.";
+  </script>
+</body>
+</html>
